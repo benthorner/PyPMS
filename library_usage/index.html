@@ -16,7 +16,7 @@
     
     
       
-        <title>Use as a library - PyPMS</title>
+        <title>Intro - PyPMS</title>
       
     
     
@@ -97,7 +97,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Use as a library
+              Intro
             
           </span>
         </div>
@@ -345,6 +345,29 @@
     
   
   
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" checked>
+      
+      <label class="md-nav__link" for="__nav_3">
+        Library usage
+        <span class="md-nav__icon md-icon"></span>
+      </label>
+      <nav class="md-nav" aria-label="Library usage" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Library usage
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+  
+  
+    
+  
+  
     <li class="md-nav__item md-nav__item--active">
       
       <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
@@ -354,12 +377,12 @@
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Use as a library
+          Intro
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
-        Use as a library
+        Intro
       </a>
       
         
@@ -377,8 +400,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#example" class="md-nav__link">
-    Example
+  <a href="#basic-example" class="md-nav__link">
+    Basic example
   </a>
   
 </li>
@@ -404,6 +427,24 @@
     </li>
   
 
+          
+            
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sqlite_example/" class="md-nav__link">
+        SQLite examples
+      </a>
+    </li>
+  
+
+          
+        </ul>
+      </nav>
+    </li>
+  
+
     
   </ul>
 </nav>
@@ -425,13 +466,13 @@
                 <h1 id="use-as-a-library">Use as a library</h1>
 <p><code>PyPMS</code>/<code>pms</code> is meant as a command line application.
 This section contain some help for those brave enough to use its internals as a library.</p>
-<h2 id="example">Example</h2>
+<h2 id="basic-example">Basic example</h2>
 <div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot;Read PMSx003 sensor on /dev/ttyUSB0&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">pms.core</span> <span class="kn">import</span> <span class="n">SensorReader</span>
 
-<span class="c1"># read 4 samples, one sample every 15 seconds</span>
-<span class="n">reader</span> <span class="o">=</span> <span class="n">SensorReader</span><span class="p">(</span><span class="s2">&quot;PMSx003&quot;</span><span class="p">,</span> <span class="s2">&quot;/dev/ttyUSB0&quot;</span><span class="p">,</span> <span class="mi">15</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
+<span class="c1"># read 4 samples, one sample every 20 seconds</span>
+<span class="n">reader</span> <span class="o">=</span> <span class="n">SensorReader</span><span class="p">(</span><span class="s2">&quot;PMSx003&quot;</span><span class="p">,</span> <span class="s2">&quot;/dev/ttyUSB0&quot;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 
 <span class="c1"># read 4 samples and print PM fields (default format)</span>
 <span class="k">with</span> <span class="n">reader</span><span class="p">:</span>
@@ -1025,12 +1066,15 @@ The following table shows all possible data fields and the type provided by each
 
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">fields</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
-<span class="kn">from</span> <span class="nn">pms.core</span> <span class="kn">import</span> <span class="n">Sensor</span>
-<span class="kn">from</span> <span class="nn">pms.sensors</span> <span class="kn">import</span> <span class="n">base</span>
 
-<span class="k">def</span> <span class="nf">types</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">base</span><span class="o">.</span><span class="n">ObsData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
-    <span class="sd">&quot;&quot;&quot;return a dictionary containing the type of each data field&quot;&quot;&quot;</span><span class="s2">&quot;&quot;</span>
-    <span class="k">return</span> <span class="p">{</span><span class="n">field</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">field</span><span class="o">.</span><span class="n">type</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="n">obs</span><span class="p">)}</span>
+<span class="kn">from</span> <span class="nn">pms.core</span> <span class="kn">import</span> <span class="n">Sensor</span>
+<span class="kn">from</span> <span class="nn">pms.core.types</span> <span class="kn">import</span> <span class="n">ObsData</span>
+
+
+<span class="k">def</span> <span class="nf">types</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">ObsData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+    <span class="sd">&quot;&quot;&quot;return a dictionary containing the type of each data field&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">field</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">field</span><span class="o">.</span><span class="n">type</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="n">obs</span><span class="p">)}</span>
+
 
 <span class="nb">print</span><span class="p">(</span><span class="n">types</span><span class="p">(</span><span class="n">Sensor</span><span class="p">[</span><span class="s2">&quot;PMSx003&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">Data</span><span class="p">))</span>
 </code></pre></div>
@@ -1273,6 +1317,21 @@ The following table shows all different formats</p>
           </div>
         </a>
       
+      
+        
+        <a href="../sqlite_example/" class="md-footer__link md-footer__link--next" aria-label="Next: SQLite examples" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              SQLite examples
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
       
     </nav>
   
