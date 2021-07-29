@@ -400,8 +400,8 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#basic-example" class="md-nav__link">
-    Basic example
+  <a href="#basic-examples" class="md-nav__link">
+    Basic examples
   </a>
   
 </li>
@@ -466,25 +466,30 @@
                 <h1 id="use-as-a-library">Use as a library</h1>
 <p><code>PyPMS</code>/<code>pms</code> is meant as a command line application.
 This section contain some help for those brave enough to use its internals as a library.</p>
-<h2 id="basic-example">Basic example</h2>
-<div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot;Read PMSx003 sensor on /dev/ttyUSB0&quot;&quot;&quot;</span>
+<h2 id="basic-examples">Basic examples</h2>
+<div class="tabbed-set" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">read one sensor</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Read PMSx003 sensor on /dev/ttyUSB0.</span>
+
+<span class="sd">Read 4 samples, one sample every 20 seconds,</span>
+<span class="sd">and print the observations on different formats.</span>
+<span class="sd">&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">pms.core</span> <span class="kn">import</span> <span class="n">SensorReader</span>
 
-<span class="c1"># read 4 samples, one sample every 20 seconds</span>
 <span class="n">reader</span> <span class="o">=</span> <span class="n">SensorReader</span><span class="p">(</span><span class="s2">&quot;PMSx003&quot;</span><span class="p">,</span> <span class="s2">&quot;/dev/ttyUSB0&quot;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 
-<span class="c1"># read 4 samples and print PM fields (default format)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">PMSx003 4 samples on default format&quot;</span><span class="p">)</span>
 <span class="k">with</span> <span class="n">reader</span><span class="p">:</span>
     <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">():</span>
         <span class="nb">print</span><span class="p">(</span><span class="n">obs</span><span class="p">)</span>
 
-<span class="c1"># read 4 samples and print all fields as csv</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">PMSx003 4 samples on CSV format&quot;</span><span class="p">)</span>
 <span class="k">with</span> <span class="n">reader</span><span class="p">:</span>
     <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">():</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">obs</span><span class="si">:</span><span class="s2">csv</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
-<span class="c1"># read 4 samples and print as csv with header</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">PMSx003 4 samples on CSV format with header&quot;</span><span class="p">)</span>
 <span class="k">with</span> <span class="n">reader</span><span class="p">:</span>
     <span class="n">print_header</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="k">for</span> <span class="n">obs</span> <span class="ow">in</span> <span class="n">reader</span><span class="p">():</span>
@@ -493,10 +498,90 @@ This section contain some help for those brave enough to use its internals as a 
             <span class="n">print_header</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">obs</span><span class="si">:</span><span class="s2">csv</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 </code></pre></div>
+<div class="highlight"><pre><span></span><code>PMSx003 4 samples on default format
+2021-07-29 15:57:01: PM1 1.0, PM2.5 11.0, PM10 12.0 μg/m3
+2021-07-29 15:57:21: PM1 0.0, PM2.5 6.0, PM10 6.0 μg/m3
+2021-07-29 15:57:41: PM1 0.0, PM2.5 1.0, PM10 2.0 μg/m3
+2021-07-29 15:58:01: PM1 0.0, PM2.5 1.0, PM10 2.0 μg/m3
+
+PMSx003 4 samples on CSV format
+1627567094, 2, 10, 12, 2.0, 10.0, 12.0, 4.35, 1.42, 0.52, 0.30, 0.00, 0.00
+1627567114, 1, 7, 7, 1.0, 7.0, 7.0, 4.53, 1.44, 0.30, 0.09, 0.00, 0.00
+1627567134, 1, 1, 2, 1.0, 1.0, 2.0, 3.27, 1.09, 0.09, 0.03, 0.03, 0.00
+1627567154, 1, 1, 2, 1.0, 1.0, 2.0, 4.65, 1.44, 0.03, 0.00, 0.00, 0.00
+
+PMSx003 4 samples on CSV format with header
+time, raw01, raw25, raw10, pm01, pm25, pm10, n0_3, n0_5, n1_0, n2_5, n5_0, n10_0
+1627567167, 2, 12, 15, 2.0, 12.0, 15.0, 5.70, 1.86, 0.68, 0.34, 0.00, 0.00
+1627567187, 2, 8, 8, 2.0, 8.0, 8.0, 3.39, 1.13, 0.23, 0.09, 0.00, 0.00
+1627567207, 1, 1, 1, 1.0, 1.0, 1.0, 4.26, 1.39, 0.12, 0.00, 0.00, 0.00
+1627567227, 2, 2, 2, 2.0, 2.0, 2.0, 3.63, 1.21, 0.03, 0.00, 0.00, 0.00
+</code></pre></div>
+</div>
+<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">read two sensors</label><div class="tabbed-content">
+<div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Read PMSx003 sensor on /dev/ttyUSB0</span>
+<span class="sd">and MCU680 sensor on /dev/ttyUSB1</span>
+
+<span class="sd">Read 4 samples from each sensor, one sample every 20 seconds,</span>
+<span class="sd">and print the observations on different formats.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">pms.core</span> <span class="kn">import</span> <span class="n">SensorReader</span>
+
+<span class="n">pms</span> <span class="o">=</span> <span class="n">SensorReader</span><span class="p">(</span><span class="s2">&quot;PMSx003&quot;</span><span class="p">,</span> <span class="s2">&quot;/dev/ttyUSB0&quot;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">bme</span> <span class="o">=</span> <span class="n">SensorReader</span><span class="p">(</span><span class="s2">&quot;MCU680&quot;</span><span class="p">,</span> <span class="s2">&quot;/dev/ttyUSB1&quot;</span><span class="p">,</span> <span class="n">interval</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">samples</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">PMSx003 and MCU680, 4 samples each on default formats&quot;</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">pms</span><span class="p">,</span> <span class="n">bme</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">pm</span><span class="p">,</span> <span class="n">bm</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">pms</span><span class="p">(),</span> <span class="n">bme</span><span class="p">()):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">pm</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">bm</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">PMSx003 and MCU680, 4 samples each on CSV format&quot;</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">pms</span><span class="p">,</span> <span class="n">bme</span><span class="p">:</span>
+    <span class="k">for</span> <span class="n">pm</span><span class="p">,</span> <span class="n">bm</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">pms</span><span class="p">(),</span> <span class="n">bme</span><span class="p">()):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PMSx003, </span><span class="si">{</span><span class="n">pm</span><span class="si">:</span><span class="s2">csv</span><span class="si">}</span><span class="s2">, MCU680, </span><span class="si">{</span><span class="n">bm</span><span class="si">:</span><span class="s2">csv</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">PMSx003 and MCU680, 4 samples each on CSV format with header&quot;</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">pms</span><span class="p">,</span> <span class="n">bme</span><span class="p">:</span>
+    <span class="n">print_header</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">for</span> <span class="n">pm</span><span class="p">,</span> <span class="n">bm</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">pms</span><span class="p">(),</span> <span class="n">bme</span><span class="p">()):</span>
+        <span class="k">if</span> <span class="n">print_header</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PMSx003, </span><span class="si">{</span><span class="n">pm</span><span class="si">:</span><span class="s2">header</span><span class="si">}</span><span class="s2">, MCU680, </span><span class="si">{</span><span class="n">bm</span><span class="si">:</span><span class="s2">header</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="n">print_header</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;PMSx003, </span><span class="si">{</span><span class="n">pm</span><span class="si">:</span><span class="s2">csv</span><span class="si">}</span><span class="s2">, MCU680, </span><span class="si">{</span><span class="n">bm</span><span class="si">:</span><span class="s2">csv</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>PMSx003 and MCU680, 4 samples each on default formats
+2021-07-29 16:01:34: PM1 1.0, PM2.5 12.0, PM10 13.0 μg/m3
+2021-07-29 16:01:36: Temp. 25.1 °C, Rel.Hum. 48.3 %, Press 988.94 hPa, 463.6 kΩ
+2021-07-29 16:01:54: PM1 1.0, PM2.5 5.0, PM10 5.0 μg/m3
+2021-07-29 16:01:58: Temp. 25.1 °C, Rel.Hum. 48.3 %, Press 989.00 hPa, 464.9 kΩ
+2021-07-29 16:02:14: PM1 0.0, PM2.5 0.0, PM10 1.0 μg/m3
+2021-07-29 16:02:20: Temp. 25.1 °C, Rel.Hum. 48.2 %, Press 988.98 hPa, 467.2 kΩ
+2021-07-29 16:02:34: PM1 0.0, PM2.5 0.0, PM10 1.0 μg/m3
+2021-07-29 16:02:42: Temp. 25.1 °C, Rel.Hum. 48.3 %, Press 988.98 hPa, 467.5 kΩ
+
+PMSx003 and MCU680, 4 samples each on CSV format
+PMSx003, 1627567375, 1, 10, 12, 1.0, 10.0, 12.0, 4.53, 1.44, 0.56, 0.30, 0.00, 0.00, MCU680, 1627567378, 25.1, 48.2, 988.94, 257, 28, 469.8, 204
+PMSx003, 1627567395, 1, 6, 7, 1.0, 6.0, 7.0, 4.86, 1.52, 0.16, 0.09, 0.00, 0.00, MCU680, 1627567400, 25.0, 48.5, 988.98, 257, 27, 470.8, 204
+PMSx003, 1627567415, 2, 3, 3, 2.0, 3.0, 3.0, 2.37, 0.75, 0.03, 0.00, 0.00, 0.00, MCU680, 1627567421, 25.1, 48.2, 988.94, 257, 17, 475.8, 204
+PMSx003, 1627567435, 0, 0, 0, 0.0, 0.0, 0.0, 2.97, 0.92, 0.03, 0.03, 0.00, 0.00, MCU680, 1627567443, 25.0, 48.2, 989.00, 257, 27, 474.1, 203
+
+PMSx003 and MCU680, 4 samples each on CSV format with header
+PMSx003, time, raw01, raw25, raw10, pm01, pm25, pm10, n0_3, n0_5, n1_0, n2_5, n5_0, n10_0, MCU680, time, temp, rhum, pres, IAQ_acc, IAQ, gas, alt
+PMSx003, 1627567457, 1, 10, 12, 1.0, 10.0, 12.0, 4.50, 1.46, 0.60, 0.30, 0.00, 0.00, MCU680, 1627567459, 25.1, 48.2, 989.00, 257, 30, 472.8, 203
+PMSx003, 1627567477, 2, 7, 7, 2.0, 7.0, 7.0, 3.87, 1.29, 0.24, 0.09, 0.00, 0.00, MCU680, 1627567481, 25.1, 48.2, 988.94, 257, 30, 474.5, 204
+PMSx003, 1627567497, 1, 2, 2, 1.0, 2.0, 2.0, 3.06, 1.02, 0.10, 0.00, 0.00, 0.00, MCU680, 1627567503, 25.1, 48.1, 989.00, 258, 34, 473.1, 203
+PMSx003, 1627567517, 0, 0, 0, 0.0, 0.0, 0.0, 2.16, 0.72, 0.00, 0.00, 0.00, 0.00, MCU680, 1627567525, 25.1, 47.9, 988.96, 259, 50, 467.8, 204
+</code></pre></div>
+</div>
+</div>
 <h2 id="observation-data-fields">Observation data fields</h2>
 <p>Each sensor provides different data fields. The <code>pms -m SENSOR_MODEL info</code> command will provide information about data fields and their units.
 The following table shows all possible data fields and the type provided by each sensor:</p>
-<div class="tabbed-set" data-tabs="1:4"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><label for="__tabbed_1_1">particulate matter</label><div class="tabbed-content">
+<div class="tabbed-set" data-tabs="2:4"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><label for="__tabbed_2_1">particulate matter</label><div class="tabbed-content">
 <table>
 <thead>
 <tr>
@@ -658,7 +743,7 @@ The following table shows all possible data fields and the type provided by each
 </tbody>
 </table>
 </div>
-<input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><label for="__tabbed_1_2">number count</label><div class="tabbed-content">
+<input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><label for="__tabbed_2_2">number count</label><div class="tabbed-content">
 <table>
 <thead>
 <tr>
@@ -806,7 +891,7 @@ The following table shows all possible data fields and the type provided by each
 </tbody>
 </table>
 </div>
-<input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><label for="__tabbed_1_3">environmental</label><div class="tabbed-content">
+<input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><label for="__tabbed_2_3">environmental</label><div class="tabbed-content">
 <table>
 <thead>
 <tr>
@@ -940,7 +1025,7 @@ The following table shows all possible data fields and the type provided by each
 </tbody>
 </table>
 </div>
-<input id="__tabbed_1_4" name="__tabbed_1" type="radio" /><label for="__tabbed_1_4">other</label><div class="tabbed-content">
+<input id="__tabbed_2_4" name="__tabbed_2" type="radio" /><label for="__tabbed_2_4">other</label><div class="tabbed-content">
 <table>
 <thead>
 <tr>
@@ -1062,7 +1147,7 @@ The following table shows all possible data fields and the type provided by each
 </div>
 </div>
 <p>On the previous example, <code>obs</code> is a <a href="https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass">dataclasses.dataclass</a> instance which an be inspected as follows</p>
-<div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot;Inspect PMSx003 data fields&quot;&quot;&quot;</span>
+<div class="highlight"><pre><span></span><code><span class="sd">&quot;&quot;&quot;Inspect sensor data fields&quot;&quot;&quot;</span>
 
 <span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">fields</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span>
@@ -1071,12 +1156,41 @@ The following table shows all possible data fields and the type provided by each
 <span class="kn">from</span> <span class="nn">pms.core.types</span> <span class="kn">import</span> <span class="n">ObsData</span>
 
 
-<span class="k">def</span> <span class="nf">types</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">ObsData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="k">def</span> <span class="nf">field_types</span><span class="p">(</span><span class="n">obs</span><span class="p">:</span> <span class="n">ObsData</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot;return a dictionary containing the type of each data field&quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="p">{</span><span class="n">field</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">field</span><span class="o">.</span><span class="n">type</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="n">obs</span><span class="p">)}</span>
 
 
-<span class="nb">print</span><span class="p">(</span><span class="n">types</span><span class="p">(</span><span class="n">Sensor</span><span class="p">[</span><span class="s2">&quot;PMSx003&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">Data</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">sensor</span> <span class="ow">in</span> <span class="n">Sensor</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">sensor</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">field_types</span><span class="p">(</span><span class="n">sensor</span><span class="o">.</span><span class="n">Data</span><span class="p">))</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code>HPMA115C0
+{&#39;time&#39;: &#39;int&#39;, &#39;pm01&#39;: &#39;int&#39;, &#39;pm25&#39;: &#39;int&#39;, &#39;pm04&#39;: &#39;int&#39;, &#39;pm10&#39;: &#39;int&#39;}
+HPMA115S0
+{&#39;time&#39;: &#39;int&#39;, &#39;pm25&#39;: &#39;int&#39;, &#39;pm10&#39;: &#39;int&#39;}
+MCU680
+{&#39;time&#39;: &#39;int&#39;, &#39;temp&#39;: &#39;float&#39;, &#39;rhum&#39;: &#39;float&#39;, &#39;pres&#39;: &#39;float&#39;, &#39;IAQ_acc&#39;: &#39;int&#39;, &#39;IAQ&#39;: &#39;int&#39;, &#39;gas&#39;: &#39;int&#39;, &#39;alt&#39;: &#39;int&#39;}
+MHZ19B
+{&#39;time&#39;: &#39;int&#39;, &#39;CO2&#39;: &#39;int&#39;}
+PMS3003
+{&#39;time&#39;: &#39;int&#39;, &#39;raw01&#39;: &#39;int&#39;, &#39;raw25&#39;: &#39;int&#39;, &#39;raw10&#39;: &#39;int&#39;, &#39;pm01&#39;: &#39;int&#39;, &#39;pm25&#39;: &#39;int&#39;, &#39;pm10&#39;: &#39;int&#39;}
+PMS5003S
+{&#39;time&#39;: &#39;int&#39;, &#39;raw01&#39;: &#39;int&#39;, &#39;raw25&#39;: &#39;int&#39;, &#39;raw10&#39;: &#39;int&#39;, &#39;pm01&#39;: &#39;int&#39;, &#39;pm25&#39;: &#39;int&#39;, &#39;pm10&#39;: &#39;int&#39;, &#39;n0_3&#39;: &#39;float&#39;, &#39;n0_5&#39;: &#39;float&#39;, &#39;n1_0&#39;: &#39;float&#39;, &#39;n2_5&#39;: &#39;float&#39;, &#39;n5_0&#39;: &#39;float&#39;, &#39;n10_0&#39;: &#39;float&#39;, &#39;HCHO&#39;: &#39;float&#39;}
+PMS5003ST
+{&#39;time&#39;: &#39;int&#39;, &#39;raw01&#39;: &#39;int&#39;, &#39;raw25&#39;: &#39;int&#39;, &#39;raw10&#39;: &#39;int&#39;, &#39;pm01&#39;: &#39;int&#39;, &#39;pm25&#39;: &#39;int&#39;, &#39;pm10&#39;: &#39;int&#39;, &#39;n0_3&#39;: &#39;float&#39;, &#39;n0_5&#39;: &#39;float&#39;, &#39;n1_0&#39;: &#39;float&#39;, &#39;n2_5&#39;: &#39;float&#39;, &#39;n5_0&#39;: &#39;float&#39;, &#39;n10_0&#39;: &#39;float&#39;, &#39;HCHO&#39;: &#39;float&#39;, &#39;temp&#39;: &#39;float&#39;, &#39;rhum&#39;: &#39;float&#39;}
+PMS5003T
+{&#39;time&#39;: &#39;int&#39;, &#39;raw01&#39;: &#39;int&#39;, &#39;raw25&#39;: &#39;int&#39;, &#39;raw10&#39;: &#39;int&#39;, &#39;pm01&#39;: &#39;int&#39;, &#39;pm25&#39;: &#39;int&#39;, &#39;pm10&#39;: &#39;int&#39;, &#39;n0_3&#39;: &#39;float&#39;, &#39;n0_5&#39;: &#39;float&#39;, &#39;n1_0&#39;: &#39;float&#39;, &#39;n2_5&#39;: &#39;float&#39;, &#39;temp&#39;: &#39;float&#39;, &#39;rhum&#39;: &#39;float&#39;}
+PMSx003
+{&#39;time&#39;: &#39;int&#39;, &#39;raw01&#39;: &#39;int&#39;, &#39;raw25&#39;: &#39;int&#39;, &#39;raw10&#39;: &#39;int&#39;, &#39;pm01&#39;: &#39;int&#39;, &#39;pm25&#39;: &#39;int&#39;, &#39;pm10&#39;: &#39;int&#39;, &#39;n0_3&#39;: &#39;float&#39;, &#39;n0_5&#39;: &#39;float&#39;, &#39;n1_0&#39;: &#39;float&#39;, &#39;n2_5&#39;: &#39;float&#39;, &#39;n5_0&#39;: &#39;float&#39;, &#39;n10_0&#39;: &#39;float&#39;}
+SDS01x
+{&#39;time&#39;: &#39;int&#39;, &#39;pm25&#39;: &#39;float&#39;, &#39;pm10&#39;: &#39;float&#39;}
+SDS198
+{&#39;time&#39;: &#39;int&#39;, &#39;pm100&#39;: &#39;int&#39;}
+SPS30
+{&#39;time&#39;: &#39;int&#39;, &#39;pm01&#39;: &#39;float&#39;, &#39;pm25&#39;: &#39;float&#39;, &#39;pm04&#39;: &#39;float&#39;, &#39;pm10&#39;: &#39;float&#39;, &#39;n0_5&#39;: &#39;float&#39;, &#39;n1_0&#39;: &#39;float&#39;, &#39;n2_5&#39;: &#39;float&#39;, &#39;n4_0&#39;: &#39;float&#39;, &#39;n10_0&#39;: &#39;float&#39;, &#39;diam&#39;: &#39;float&#39;}
+ZH0xx
+{&#39;time&#39;: &#39;int&#39;, &#39;pm25&#39;: &#39;int&#39;, &#39;pm10&#39;: &#39;int&#39;, &#39;pm01&#39;: &#39;int&#39;}
 </code></pre></div>
 <h2 id="observation-formats">Observation formats</h2>
 <p>As the example at the top of the page shows, the <code>obs</code> object has custom formats.
