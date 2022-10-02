@@ -11,7 +11,7 @@ After reading the sensor, get all measurements from the DB amd print them by sen
 
 NOTE:
 the read_obs function creates a subclass of sensor.Data in order to avoid the
-callin to __post_init__, as this was already tone when the sensor message was decoded.
+__post_init__ call, as this was already tone when the sensor message was decoded.
 Please open an issue or submit a PR i you know of a cleaner way to achieve this.
 """
 
@@ -19,14 +19,17 @@ import sqlite3
 from contextlib import closing, contextmanager
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
-from typing import Callable, ContextManager, Generator
+from typing import Callable, ContextManager, Iterator
 
-from typer import Argument, Option, progressbar
+from typer import Argument, Option, Typer, progressbar
 
 from pms.core import Sensor, SensorReader
 from pms.core.reader import ObsData
 
+app = Typer(add_completion=False)
 
+
+@app.command()
 def main(
     db_path: Path = Argument(Path("pypms.sqlite"), help="sensor measurements DB"),
     samples: int = Option(4, "--samples", "-n"),
@@ -68,11 +71,11 @@ def main(
 def pypms_db(db_path: Path) -> Callable[[], ContextManager[sqlite3.Connection]]:
     """
     create db and table and update sensor views, if do not exists already
-    and return a context managet for a DB connection
+    and return a context manager for a DB connection
     """
 
     @contextmanager
-    def connect() -> Generator[sqlite3.Connection, None, None]:
+    def connect() -> Iterator[sqlite3.Connection]:
         db = sqlite3.connect(str(db_path))
         try:
             yield db
@@ -94,7 +97,7 @@ def pypms_db(db_path: Path) -> Callable[[], ContextManager[sqlite3.Connection]]:
     with connect() as db, db, closing(db.cursor()) as cur:
         cur.executescript(create_table)
 
-        # create a "wide table" view for every suppoorted sensor
+        # create a "wide table" view for every supported sensor
         for sensor in Sensor:
             view_fields = ",\n".join(
                 f"MAX(CASE WHEN field='{field.name}' THEN value ELSE NULL END) {field.name}"
@@ -136,7 +139,7 @@ def write_measurements(db: sqlite3.Connection, sensor: Sensor, obs: ObsData):
         cur.executemany(insert, values)
 
 
-def read_obs(db: sqlite3.Connection, sensor: Sensor) -> Generator[ObsData, None, None]:
+def read_obs(db: sqlite3.Connection, sensor: Sensor) -> Iterator[ObsData]:
     """read measurements from DB and return observations"""
 
     @dataclass
@@ -151,9 +154,7 @@ def read_obs(db: sqlite3.Connection, sensor: Sensor) -> Generator[ObsData, None,
 
 
 if __name__ == "__main__":
-    from typer import run
-
     try:
-        run(main)
+        app()
     except KeyboardInterrupt:
         print("")

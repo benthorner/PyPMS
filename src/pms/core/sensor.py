@@ -4,12 +4,7 @@ Access supported sensors from a single object
 
 import sys
 from datetime import datetime
-
-if sys.version_info >= (3, 7):  # pragma: no cover
-    from enum import Enum
-else:  # pragma: no cover
-    from aenum import Enum
-
+from enum import Enum
 
 if sys.version_info >= (3, 10):  # pragma: no cover
     from importlib import metadata
@@ -95,7 +90,7 @@ class Sensor(Enum):
             return True
 
     def decode(self, buffer: bytes, *, time: int = None) -> ObsData:
-        """Exract observations from serial buffer"""
+        """Extract observations from serial buffer"""
         if not time:  # pragma: no cover
             time = self.now()
 

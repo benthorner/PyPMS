@@ -1,14 +1,10 @@
 import sys
 from contextlib import closing, contextmanager
 from csv import DictReader
+from enum import Enum
 from pathlib import Path
 from sqlite3 import connect
-from typing import Generator, List
-
-if sys.version_info >= (3, 7):  # pragma: no cover
-    from enum import Enum
-else:  # pragma: no cover
-    from aenum import Enum
+from typing import Iterator, List
 
 import pytest
 
@@ -41,7 +37,7 @@ def captured_data_reader(db_str: str = ":memory:", *, data: Path = None):
         with db, closing(db.cursor()) as cur, data.open() as csv:
             cur.executemany(insert, DictReader(csv))
 
-    def reader(sensor: str) -> Generator[RawData, None, None]:
+    def reader(sensor: str) -> Iterator[RawData]:
         select = f"SELECT time, message FROM messages WHERE sensor IS '{sensor}'"
         with closing(db.cursor()) as cur:
             cur.execute(select)
@@ -73,15 +69,15 @@ class CapturedData(Enum):
         return Sensor[self.name]
 
     @property
-    def data(self) -> Generator[bytes, None, None]:
+    def data(self) -> Iterator[bytes]:
         return (msg.data for msg in self.value)
 
     @property
-    def time(self) -> Generator[int, None, None]:
+    def time(self) -> Iterator[int]:
         return (msg.time for msg in self.value)
 
     @property
-    def obs(self) -> Generator[ObsData, None, None]:
+    def obs(self) -> Iterator[ObsData]:
         sensor = self.sensor
         return (sensor.decode(msg.data, time=msg.time) for msg in self.value)
 

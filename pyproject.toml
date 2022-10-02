@@ -1,10 +1,10 @@
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core>=1.0.0", "poetry-dynamic-versioning"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.poetry]
 name = "pypms"
-version = "0.6.2"
+version = "0.0.0"
 description = "Data acquisition and logging for Air Quality Sensors with UART interface"
 authors = ["Alvaro Valdebenito <avaldebe@gmail.com>"]
 readme = "README.md"
@@ -14,7 +14,6 @@ keywords = ["air quality", "particulate matter"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.6",
     "Programming Language :: Python :: 3.7",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
@@ -28,63 +27,76 @@ classifiers = [
     "Topic :: Utilities",
     "Typing :: Typed",
 ]
-packages = [{ include="pms", from="src" }]
+packages = [{ include = "pms", from = "src" }]
 
 [tool.poetry.dependencies]
-python = ">=3.6,<4.0"
-pyserial = ">=3.0"
-typing-extensions = { version=">=3.10", python=">=3.6,<3.8" }
-typer = ">=0.3"
-dataclasses = { version=">=0.6", python="~3.6" }
-aenum = { version=">=3.1", python="~3.6" }
-importlib-metadata = { version=">=3.6", python=">=3.6,<3.10" }
-paho-mqtt = { version=">=1.4.0", optional=true }
-influxdb = { version=">=5.2.0", optional=true }
+python = ">=3.7,<4.0"
+pyserial = ">=3.5"
+typing-extensions = { version = ">=3.10", python = "<3.8" }
+typer = ">=0.6.1"
+importlib-metadata = { version = ">=3.6", python = "<3.10" }
+# extras
+paho-mqtt = { version = ">=1.4.0", optional = true }
+influxdb = { version = ">=5.2.0", optional = true }
+# test
+pytest = { version = ">=7.1.2", optional = true }
+pytest-cov = { version = ">=2.12.1", optional = true }
+packaging = { version = "^21.3", optional = true }
+# docs
+mkdocs = { version = ">=1.2.3", optional = true }
+mkdocs-material = { version = ">=8.2.5", optional = true }
+pymdown-extensions = { version = ">=9.5", optional = true }
+
 
 [tool.poetry.extras]
 mqtt = ["paho-mqtt"]
 influxdb = ["influxdb"]
+test = ["pytest", "pytest-cov", "packaging"]
+docs = ["mkdocs", "mkdocs-material", "pymdown-extensions"]
 
 [tool.poetry.dev-dependencies]
-pytest = ">=6.2.4"
-pytest-cov = ">=2.12.1"
 pytest-sugar = ">=0.9.4"
-mypy = ">=0.902"
-types-dataclasses = ">=0.1.5"
+mypy = ">=0.971"
 
 [tool.poetry.scripts]
 pms = "pms.cli:main"
 
 [tool.poetry.plugins."pypms.sensors"]
 # docs/sensors/Plantower.md
-PMSx003   = "pms.sensors.plantower.pmsx003"
-PMS3003   = "pms.sensors.plantower.pms3003"
-PMS5003S  = "pms.sensors.plantower.pms5003s"
+PMSx003 = "pms.sensors.plantower.pmsx003"
+PMS3003 = "pms.sensors.plantower.pms3003"
+PMS5003S = "pms.sensors.plantower.pms5003s"
 PMS5003ST = "pms.sensors.plantower.pms5003st"
-PMS5003T  = "pms.sensors.plantower.pms5003t"
+PMS5003T = "pms.sensors.plantower.pms5003t"
 # docs/sensors/NovaFitness.md
-SDS01x    = "pms.sensors.novafitness.sds01x"
-SDS198    = "pms.sensors.novafitness.sds198"
+SDS01x = "pms.sensors.novafitness.sds01x"
+SDS198 = "pms.sensors.novafitness.sds198"
 # docs/sensors/Honeywell.md
 HPMA115S0 = "pms.sensors.honeywell.hpma115s0"
 HPMA115C0 = "pms.sensors.honeywell.hpma115c0"
 # docs/sensors/Sensirion.md
-SPS30     = "pms.sensors.sensirion.sps30"
+SPS30 = "pms.sensors.sensirion.sps30"
 # docs/sensors/mcu680.md
-MCU680    = "pms.sensors.bosch_sensortec.mcu680"
+MCU680 = "pms.sensors.bosch_sensortec.mcu680"
 # docs/sensors/Winsen.md
-MHZ19B    = "pms.sensors.winsen.mhz19b"
-ZH0xx     = "pms.sensors.winsen.zh0xx"
+MHZ19B = "pms.sensors.winsen.mhz19b"
+ZH0xx = "pms.sensors.winsen.zh0xx"
 
 [tool.poetry.plugins."pypms.extras"]
 influxdb = "pms.extra.influxdb:cli"
-mqtt     = "pms.extra.mqtt:cli"
-bridge   = "pms.extra.bridge:cli"
+mqtt = "pms.extra.mqtt:cli"
+bridge = "pms.extra.bridge:cli"
+
+[tool.poetry-dynamic-versioning]
+enable = true
+vcs = "git"
+style = "pep440"
+pattern = '^v?(?P<base>\d+(\.\d+)*)$'
 
 [tool.tox]
 legacy_tox_ini = """
 [tox]
-envlist = lint, docs, py36, py37, py38, py39, py310
+envlist = lint, docs, py37, py38, py39, py310
 skip_missing_interpreters = True
 isolated_build = True
 
@@ -93,35 +105,23 @@ commands_pre =
     python --version
 commands =
     pytest -ra -q {posargs:--cov}
-deps =
-    pytest
-    pytest-cov
+extras = 
+    test
 
 [testenv:lint]
-skipsdist=True
-commands =
-    black --check .
-    isort --check .
-    mypy .
-deps =
-    black
-    isort
-    mypy>=0.902
-    types-dataclasses
-    pytest
-
-[testenv:docs]
 skip_install=True
 commands =
-    mkdocs build --clean
+    pre-commit run --all-files --show-diff-on-failure
 deps =
-    mkdocs
-    mkdocs-material
-    pymdown-extensions
+    pre-commit
 
-[testenv:docs-deploy]
-deps = {[testenv:docs]deps}
-commands = mkdocs gh-deploy {posargs:--clean}
+[testenv:docs{,-serve,-deploy}]
+commands =
+    docs:        mkdocs build --clean
+docs-serve:  mkdocs serve
+docs-deploy: mkdocs gh-deploy {posargs:--clean}
+extras = 
+    docs
 """
 
 [tool.pytest.ini_options]
@@ -167,11 +167,19 @@ show_error_codes = true
 pretty = true
 sqlite_cache = true
 exclude = "site"
-overrides = [
-    { ignore_missing_imports=true, module="paho.mqtt" },
-    { ignore_missing_imports=true, module="influxdb" },
-    { ignore_missing_imports=true, module="serial" },
-    { ignore_missing_imports=true, module="aenum" },
-    { warn_unused_ignores=false, module="pms.extra.mqtt" },
-    { warn_unused_ignores=false, module="pms.extra.influxdb" },
+
+[[tool.mypy.overrides]]
+module = [
+    "paho.mqtt",
+    "influxdb",
+    "serial",
+    "importlib_metadata",
+    "typer.*",
+    "packaging.*",
+    "pytest",
 ]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["pms.extra.mqtt", "pms.extra.influxdb"]
+warn_unused_ignores = false
