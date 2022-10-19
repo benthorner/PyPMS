@@ -27,6 +27,10 @@ HEXDUMP_TABLE = bytes.maketrans(
 )
 
 
+class UnableToRead(Exception):
+    pass
+
+
 class RawData(NamedTuple):
     """raw messages with timestamp"""
 
@@ -119,12 +123,12 @@ class SensorReader:
         # check if the sensor answered
         if len(buffer) == 0:  # pragma: no cover
             logger.error(f"Sensor did not respond, check UART pin connections")
-            sys.exit(1)
+            raise UnableToRead("Sensor did not respond")
 
         # check against sensor type derived from buffer
         if not self.sensor.check(buffer, "passive_mode"):  # pragma: no cover
             logger.error(f"Sensor is not {self.sensor.name}")
-            sys.exit(1)
+            raise UnableToRead("Sensor failed validation")
 
         return self
 

@@ -1,4 +1,5 @@
 import pytest
+
 from pms.core import reader
 
 
@@ -51,7 +52,7 @@ def test_reader(mock_sensor, monkeypatch):
     sensor_reader = reader.SensorReader(
         port=mock_sensor.port,
         samples=0,  # exit immediately
-        sensor = "PMSx003",  # match with stubs
+        sensor="PMSx003",  # match with stubs
         timeout=0.01,  # low to avoid hanging on failure
     )
 
@@ -75,3 +76,46 @@ def test_reader(mock_sensor, monkeypatch):
 
     # check sleep happened
     assert mock_sensor.stubs["sleep"].called
+
+
+def test_reader_sensor_mismatch(mock_sensor, monkeypatch):
+    sensor_reader = reader.SensorReader(
+        port=mock_sensor.port,
+        samples=0,  # exit immediately
+        sensor="PMSx003",  # match with stubs
+        timeout=0.01,  # low to avoid hanging on failure
+    )
+
+    mock_sensor.stub(
+        name="passive_mode",  # used for validation
+        receive_bytes=b"BM\xe1\x00\x00\x01p",
+        send_bytes=b"123",  # nonsense
+    )
+
+    # https://github.com/pyserial/pyserial/issues/625
+    monkeypatch.setattr(
+        sensor_reader.serial,
+        "flush",
+        lambda: None,
+    )
+
+    with pytest.raises(reader.UnableToRead) as e:
+        with sensor_reader as r:
+            list(r())
+
+    assert "failed validation" in str(e.value)
+
+
+def test_reader_sensor_no_response(mock_serial):
+    sensor_reader = reader.SensorReader(
+        port=mock_serial.port,
+        samples=0,  # exit immediately
+        sensor="PMS3003",  # arbitrary sensor
+        timeout=0.01,  # low to avoid hanging on failure
+    )
+
+    with pytest.raises(reader.UnableToRead) as e:
+        with sensor_reader as r:
+            list(r())
+
+    assert "did not respond" in str(e.value)

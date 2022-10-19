@@ -14,7 +14,7 @@ else:  # pragma: no cover
 from typer import Argument, Context, Exit, Option, Typer, echo
 
 from pms import logger
-from pms.core import MessageReader, SensorReader, Supported
+from pms.core import MessageReader, SensorReader, Supported, UnableToRead
 
 main = Typer(help="Data acquisition and logging for Air Quality Sensors with UART interface")
 
@@ -85,20 +85,24 @@ def serial(
     reader = ctx.obj["reader"]
     if decode:
         reader = MessageReader(decode, reader.sensor, reader.samples)
-    with reader:
-        if format == "hexdump":
-            for n, raw in enumerate(reader(raw=True)):
-                echo(raw.hexdump(n))
-        elif format:
-            print_header = format == "csv"
-            for obs in reader():
-                if print_header:
-                    echo(f"{obs:header}")
-                    print_header = False
-                echo(f"{obs:{format}}")
-        else:  # pragma: no cover
-            for obs in reader():
-                echo(str(obs))
+
+    try:
+        with reader:
+            if format == "hexdump":
+                for n, raw in enumerate(reader(raw=True)):
+                    echo(raw.hexdump(n))
+            elif format:
+                print_header = format == "csv"
+                for obs in reader():
+                    if print_header:
+                        echo(f"{obs:header}")
+                        print_header = False
+                    echo(f"{obs:{format}}")
+            else:  # pragma: no cover
+                for obs in reader():
+                    echo(str(obs))
+    except UnableToRead:
+        sys.exit(1)
 
 
 @main.command()
@@ -113,24 +117,28 @@ def csv(
         path /= f"{datetime.now():%F}_pypms.csv"
     mode = "w" if overwrite else "a"
     logger.debug(f"open {path} on '{mode}' mode")
-    with ctx.obj["reader"] as reader, path.open(mode) as csv:
-        sensor_name = reader.sensor.name
-        if not capture:
-            logger.debug(f"capture {sensor_name} observations to {path}")
-            # add header to new files
-            print_header = path.stat().st_size == 0
-            for obs in reader():
-                if print_header:
-                    csv.write(f"{obs:header}\n")
-                    print_header = False
-                csv.write(f"{obs:csv}\n")
-        else:
-            logger.debug(f"capture {sensor_name} messages to {path}")
-            # add header to new files
-            if path.stat().st_size == 0:
-                csv.write("time,sensor,hex\n")
-            for raw in reader(raw=True):
-                csv.write(f"{raw.time},{sensor_name},{raw.hex}\n")
+
+    try:
+        with ctx.obj["reader"] as reader, path.open(mode) as csv:
+            sensor_name = reader.sensor.name
+            if not capture:
+                logger.debug(f"capture {sensor_name} observations to {path}")
+                # add header to new files
+                print_header = path.stat().st_size == 0
+                for obs in reader():
+                    if print_header:
+                        csv.write(f"{obs:header}\n")
+                        print_header = False
+                    csv.write(f"{obs:csv}\n")
+            else:
+                logger.debug(f"capture {sensor_name} messages to {path}")
+                # add header to new files
+                if path.stat().st_size == 0:
+                    csv.write("time,sensor,hex\n")
+                for raw in reader(raw=True):
+                    csv.write(f"{raw.time},{sensor_name},{raw.hex}\n")
+    except UnableToRead:
+        sys.exit(1)
 
 
 if __name__ == "__main__":  # pragma: no cover
