@@ -51,16 +51,8 @@ class RawData(NamedTuple):
 
 
 class Reader(AbstractContextManager):
-    @overload
-    def __call__(self) -> Iterator[ObsData]:
-        ...
-
-    @overload
-    def __call__(self, *, raw: bool) -> Iterator[RawData]:
-        ...
-
     @abstractmethod
-    def __call__(self, *, raw: Optional[bool] = None):
+    def __call__(self, *, raw: Optional[bool]) -> Iterator[Union[RawData, ObsData]]:
         ...
 
 
