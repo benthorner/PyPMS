@@ -20,6 +20,9 @@ class MockReader(reader.Reader):
     def __exit__(self, *_args):
         self.exited = True
 
+    def read_one(self) -> reader.Reading:
+        raise NotImplemented
+
 
 @pytest.fixture
 def mock_sensor(mock_serial):
@@ -94,6 +97,28 @@ def test_sensor_reader(mock_sensor, monkeypatch):
 
     # check sleep happened
     assert mock_sensor.stubs["sleep"].called
+
+
+def test_sensor_reader_read_one(mock_sensor, monkeypatch):
+    sensor_reader = reader.SensorReader(
+        port=mock_sensor.port,
+        sensor="PMSx003",  # match with stubs
+        timeout=0.01,  # low to avoid hanging on failure
+    )
+
+    # https://github.com/pyserial/pyserial/issues/625
+    monkeypatch.setattr(
+        sensor_reader.serial,
+        "flush",
+        lambda: None,
+    )
+
+    with sensor_reader as r:
+        reading = sensor_reader.read_one()
+
+    # check data was read
+    assert reading.buffer
+    assert reading.obs_data.pm10 == 11822
 
 
 def test_sensor_reader_sensor_mismatch(mock_sensor, monkeypatch):
@@ -176,3 +201,16 @@ def test_message_reader(tmp_path):
         values = list(message_reader())
 
     assert len(values) == 10
+
+
+def test_message_reader_read_one(tmp_path):
+    message_reader = reader.MessageReader(
+        path=captured_data,
+        sensor=Sensor["PMS3003"],
+    )
+
+    with message_reader:
+        reading = message_reader.read_one()
+
+    assert reading.buffer
+    assert reading.obs_data.pm10 == 0

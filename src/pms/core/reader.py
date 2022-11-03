@@ -11,6 +11,7 @@ import time
 from abc import abstractmethod
 from contextlib import AbstractContextManager, contextmanager
 from csv import DictReader
+from dataclasses import dataclass
 from pathlib import Path
 from textwrap import wrap
 from typing import Iterator, NamedTuple, Optional, Union, overload
@@ -50,9 +51,27 @@ class RawData(NamedTuple):
         return f"{offset:08x}: {hex}  {dump}"
 
 
+@dataclass
+class Reading:
+    buffer: bytes
+    obs_data: ObsData
+
+    @property
+    def raw_data(self) -> RawData:
+        return RawData(self.time, self.buffer)
+
+    @property
+    def time(self) -> int:
+        return self.obs_data.time
+
+
 class Reader(AbstractContextManager):
     @abstractmethod
     def __call__(self, *, raw: Optional[bool]) -> Iterator[Union[RawData, ObsData]]:
+        ...
+
+    @abstractmethod
+    def read_one(self) -> Reading:
         ...
 
 
@@ -153,28 +172,38 @@ class SensorReader(Reader):
         sample = 0
         while self.serial.is_open:
             try:
-                buffer = self._cmd("passive_read")
-
                 try:
-                    obs = self.sensor.decode(buffer)
+                    reading = self.read_one()
                 except (SensorWarmingUp, InconsistentObservation) as e:  # pragma: no cover
                     logger.debug(e)
                     time.sleep(5)
                 except SensorWarning as e:  # pragma: no cover
                     logger.debug(e)
-                    self.serial.reset_input_buffer()
                 else:
-                    yield RawData(obs.time, buffer) if raw else obs
+                    yield reading.raw_data if raw else reading.obs_data
                     sample += 1
                     if self.samples is not None and sample >= self.samples:
                         break
                     if self.interval:  # pragma: no cover
-                        delay = self.interval - (time.time() - obs.time)
+                        delay = self.interval - (time.time() - reading.time)
                         if delay > 0:
                             time.sleep(delay)
             except KeyboardInterrupt:  # pragma: no cover
                 print()
                 break
+
+    def read_one(self) -> Reading:
+        buffer = self._cmd("passive_read")
+
+        try:
+            obs = self.sensor.decode(buffer)
+            return Reading(buffer=buffer, obs_data=obs)
+        except (SensorWarmingUp, InconsistentObservation) as e:  # pragma: no cover
+            # no special handling needed
+            raise
+        except SensorWarning as e:  # pragma: no cover
+            self.serial.reset_input_buffer()
+            raise
 
 
 class MessageReader(Reader):
@@ -195,13 +224,21 @@ class MessageReader(Reader):
         self.csv.close()
 
     def __call__(self, *, raw: Optional[bool] = None):
-        for row in self.data:
-            time, message = int(row["time"]), bytes.fromhex(row["hex"])
-            yield RawData(time, message) if raw else self.sensor.decode(message, time=time)
-            if self.samples:  # pragma: no cover
-                self.samples -= 1
-                if self.samples <= 0:
-                    break
+        try:
+            while reading := self.read_one():
+                yield reading.raw_data if raw else reading.obs_data
+                if self.samples:  # pragma: no cover
+                    self.samples -= 1
+                    if self.samples <= 0:
+                        break
+        except StopIteration:
+            return
+
+    def read_one(self) -> Reading:
+        row = next(self.data)
+        time, message = int(row["time"]), bytes.fromhex(row["hex"])
+        obs = self.sensor.decode(message, time=time)
+        return Reading(buffer=message, obs_data=obs)
 
 
 @contextmanager
