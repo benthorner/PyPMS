@@ -151,8 +151,13 @@ class SensorReader(Reader):
         self.serial.port = port
         self.serial.baudrate = self.sensor.baud
         self.serial.timeout = timeout or 5  # max time to wake up sensor
-        self.interval = interval
         self.samples = samples
+
+        self.sampler = Sampler(
+            samples=samples,
+            interval=interval,
+        )
+
         logger.debug(
             f"capture {samples if samples else '?'} {sensor} obs "
             f"from {port} every {interval if interval else '?'} secs"
@@ -221,11 +226,6 @@ class SensorReader(Reader):
     def __call__(self, *, raw: Optional[bool] = None):
         """Passive mode reading at regular intervals"""
 
-        sampler = Sampler(
-            samples=self.samples,
-            interval=self.interval,
-        )
-
         try:
             while True:
                 try:
@@ -236,7 +236,7 @@ class SensorReader(Reader):
                 except TemporaryFailure as e:  # pragma: no cover
                     logger.debug(e)
                 else:
-                    yield sampler.sample(reading, raw=raw)
+                    yield self.sampler.sample(reading, raw=raw)
         except KeyboardInterrupt:  # pragma: no cover
             print()
         except StopIteration:
@@ -263,7 +263,10 @@ class MessageReader(Reader):
     def __init__(self, path: Path, sensor: Sensor, samples: Optional[int] = None) -> None:
         self.path = path
         self.sensor = sensor
-        self.sampler = Sampler(samples=samples)
+        self.samples = samples
+        self.sampler = Sampler(
+            samples=self.samples,
+        )
 
     def __enter__(self) -> "MessageReader":
         logger.debug(f"open {self.path}")
@@ -277,6 +280,7 @@ class MessageReader(Reader):
         self.csv.close()
 
     def __call__(self, *, raw: Optional[bool] = None):
+
         try:
             while True:
                 reading = self.read_one()
