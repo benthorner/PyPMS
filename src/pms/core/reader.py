@@ -83,6 +83,39 @@ class Reader(AbstractContextManager):
         ...
 
 
+class BaseReader(Reader):
+    def __init__(
+        self,
+        interval: Optional[int] = None,
+        samples: Optional[int] = None,
+    ):
+        self.samples = samples
+
+        self.sampler = Sampler(
+            samples=self.samples,
+            interval=interval,
+        )
+
+    def __call__(self, *, raw: Optional[bool] = None):
+        """Passive mode reading at regular intervals"""
+
+        try:
+            while True:
+                try:
+                    reading = self.read_one()
+                except ReaderNotReady as e:  # pragma: no cover
+                    logger.debug(e)
+                    time.sleep(5)
+                except TemporaryFailure as e:  # pragma: no cover
+                    logger.debug(e)
+                else:
+                    yield self.sampler.sample(reading, raw=raw)
+        except KeyboardInterrupt:  # pragma: no cover
+            print()
+        except StopIteration:
+            return
+
+
 class Sampler:
     # assert fields can be present
     last_reading: Optional[Reading]
@@ -126,7 +159,7 @@ class Sampler:
         return reading.raw_data if raw else reading.obs_data
 
 
-class SensorReader(Reader):
+class SensorReader(BaseReader):
     """Read sensor messages from serial port
 
     The sensor is woken up after opening the serial port, and put to sleep when before closing the port.
@@ -145,18 +178,13 @@ class SensorReader(Reader):
         timeout: Optional[float] = None,
     ) -> None:
         """Configure serial port"""
+        super().__init__(samples=samples, interval=interval)
         self.sensor = sensor if isinstance(sensor, Sensor) else Sensor[sensor]
         self.pre_heat_seconds = self.sensor.pre_heat
         self.serial = Serial()
         self.serial.port = port
         self.serial.baudrate = self.sensor.baud
         self.serial.timeout = timeout or 5  # max time to wake up sensor
-        self.samples = samples
-
-        self.sampler = Sampler(
-            samples=samples,
-            interval=interval,
-        )
 
         logger.debug(
             f"capture {samples if samples else '?'} {sensor} obs "
@@ -223,25 +251,6 @@ class SensorReader(Reader):
         logger.debug(f"close {self.serial.port}")
         self.serial.close()
 
-    def __call__(self, *, raw: Optional[bool] = None):
-        """Passive mode reading at regular intervals"""
-
-        try:
-            while True:
-                try:
-                    reading = self.read_one()
-                except ReaderNotReady as e:  # pragma: no cover
-                    logger.debug(e)
-                    time.sleep(5)
-                except TemporaryFailure as e:  # pragma: no cover
-                    logger.debug(e)
-                else:
-                    yield self.sampler.sample(reading, raw=raw)
-        except KeyboardInterrupt:  # pragma: no cover
-            print()
-        except StopIteration:
-            return
-
     def read_one(self) -> Reading:
         if not self.serial.is_open:
             raise StopIteration
@@ -259,14 +268,11 @@ class SensorReader(Reader):
             raise TemporaryFailure
 
 
-class MessageReader(Reader):
+class MessageReader(BaseReader):
     def __init__(self, path: Path, sensor: Sensor, samples: Optional[int] = None) -> None:
+        super().__init__(samples=samples)
         self.path = path
         self.sensor = sensor
-        self.samples = samples
-        self.sampler = Sampler(
-            samples=self.samples,
-        )
 
     def __enter__(self) -> "MessageReader":
         logger.debug(f"open {self.path}")
@@ -278,15 +284,6 @@ class MessageReader(Reader):
     def __exit__(self, exception_type, exception_value, traceback) -> None:
         logger.debug(f"close {self.path}")
         self.csv.close()
-
-    def __call__(self, *, raw: Optional[bool] = None):
-
-        try:
-            while True:
-                reading = self.read_one()
-                yield self.sampler.sample(reading, raw=raw)
-        except StopIteration:
-            return
 
     def read_one(self) -> Reading:
         row = next(self.data)
