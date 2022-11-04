@@ -191,6 +191,24 @@ def test_sensor_reader_read_one(mock_sensor, monkeypatch):
     assert reading.obs_data.pm10 == 11822
 
 
+def test_sensor_reader_read_closed(mock_sensor, monkeypatch):
+    sensor_reader = reader.SensorReader(
+        port=mock_sensor.port,
+        sensor="PMSx003",  # match with stubs
+        timeout=0.01,  # low to avoid hanging on failure
+    )
+
+    # https://github.com/pyserial/pyserial/issues/625
+    monkeypatch.setattr(
+        sensor_reader.serial,
+        "flush",
+        lambda: None,
+    )
+
+    with pytest.raises(StopIteration):
+        sensor_reader.read_one()
+
+
 def test_sensor_reader_sensor_mismatch(mock_sensor, monkeypatch):
     sensor_reader = reader.SensorReader(
         port=mock_sensor.port,

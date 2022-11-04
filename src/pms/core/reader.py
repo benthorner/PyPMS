@@ -219,7 +219,7 @@ class SensorReader(Reader):
         )
 
         try:
-            while self.serial.is_open:
+            while True:
                 try:
                     reading = self.read_one()
                 except (SensorWarmingUp, InconsistentObservation) as e:  # pragma: no cover
@@ -235,6 +235,9 @@ class SensorReader(Reader):
             return
 
     def read_one(self) -> Reading:
+        if not self.serial.is_open:
+            raise StopIteration
+
         buffer = self._cmd("passive_read")
 
         try:
@@ -267,7 +270,8 @@ class MessageReader(Reader):
 
     def __call__(self, *, raw: Optional[bool] = None):
         try:
-            while reading := self.read_one():
+            while True:
+                reading = self.read_one()
                 yield self.sampler.sample(reading, raw=raw)
         except StopIteration:
             return
