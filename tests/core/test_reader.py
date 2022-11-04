@@ -134,6 +134,41 @@ def test_sensor_reader_sleep(mock_sensor, monkeypatch):
     assert 0 < sleep.slept_for < 5
 
 
+def test_sensor_reader_preheat(mock_sensor, monkeypatch):
+    sensor_reader = reader.SensorReader(
+        port=mock_sensor.port,
+        sensor="PMSx003",  # match with stubs
+        timeout=0.01,  # low to avoid hanging on failure
+    )
+
+    # https://github.com/pyserial/pyserial/issues/625
+    monkeypatch.setattr(
+        sensor_reader.serial,
+        "flush",
+        lambda: None,
+    )
+
+    # override pre heat duration
+    sensor_reader.pre_heat_seconds = 5
+
+    def sleep(seconds):
+        sleep.slept_for += seconds
+
+    sleep.slept_for = 0
+
+    monkeypatch.setattr(
+        reader.time,
+        "sleep",
+        sleep,
+    )
+
+    with sensor_reader as r:
+        pass
+
+    # check we slept between reads
+    assert sleep.slept_for == 5
+
+
 def test_sensor_reader_read_one(mock_sensor, monkeypatch):
     sensor_reader = reader.SensorReader(
         port=mock_sensor.port,

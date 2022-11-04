@@ -138,7 +138,7 @@ class SensorReader(Reader):
     ) -> None:
         """Configure serial port"""
         self.sensor = sensor if isinstance(sensor, Sensor) else Sensor[sensor]
-        self.pre_heat = self.sensor.pre_heat
+        self.pre_heat_seconds = self.sensor.pre_heat
         self.serial = Serial()
         self.serial.port = port
         self.serial.baudrate = self.sensor.baud
@@ -164,17 +164,18 @@ class SensorReader(Reader):
         # return full buffer
         return self.serial.read(max(cmd.answer_length, self.serial.in_waiting))
 
-    def _pre_heat(self):  # pragma: no cover
-        if not self.pre_heat:
+    def pre_heat(self):
+        """Default implementation to wait for sensor"""
+        if not self.pre_heat_seconds:
             return
 
-        logger.info(f"pre-heating {self.sensor} sensor {self.pre_heat} sec")
-        with progressbar(range(self.pre_heat), label="pre-heating") as progress:
+        logger.info(f"pre-heating {self.sensor} sensor {self.pre_heat_seconds} sec")
+        with progressbar(range(self.pre_heat_seconds), label="pre-heating") as progress:
             for _ in progress:
                 time.sleep(1)
 
-        # only pre-heat the firs time
-        self.pre_heat = 0
+        # only pre-heat the first time
+        self.pre_heat_seconds = 0
 
     def __enter__(self) -> "SensorReader":
         """Open serial port and sensor setup"""
@@ -186,7 +187,7 @@ class SensorReader(Reader):
         # wake sensor and set passive mode
         logger.debug(f"wake {self.sensor}")
         buffer = self._cmd("wake")
-        self._pre_heat()
+        self.pre_heat()
         buffer += self._cmd("passive_mode")
         logger.debug(f"buffer length: {len(buffer)}")
 

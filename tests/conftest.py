@@ -146,7 +146,7 @@ def capture(monkeypatch, capture_data) -> CapturedData:
     def mock_reader__pre_heat(self):
         pass
 
-    monkeypatch.setattr("pms.core.reader.SensorReader._pre_heat", mock_reader__pre_heat)
+    monkeypatch.setattr("pms.core.reader.SensorReader.pre_heat", mock_reader__pre_heat)
 
     def mock_sensor_check(self, buffer: bytes, command: str) -> bool:
         """don't check if message matches sensor"""
