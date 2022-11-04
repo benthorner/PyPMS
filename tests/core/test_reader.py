@@ -99,6 +99,41 @@ def test_sensor_reader(mock_sensor, monkeypatch):
     assert mock_sensor.stubs["sleep"].called
 
 
+def test_sensor_reader_sleep(mock_sensor, monkeypatch):
+    sensor_reader = reader.SensorReader(
+        port=mock_sensor.port,
+        samples=2,  # try to read twice
+        interval=5,  # sleep between samples
+        sensor="PMSx003",  # match with stubs
+        timeout=0.01,  # low to avoid hanging on failure
+    )
+
+    # https://github.com/pyserial/pyserial/issues/625
+    monkeypatch.setattr(
+        sensor_reader.serial,
+        "flush",
+        lambda: None,
+    )
+
+    def sleep(seconds):
+        sleep.slept_for = seconds
+
+    monkeypatch.setattr(
+        reader.time,
+        "sleep",
+        sleep,
+    )
+
+    with sensor_reader as r:
+        obs = list(r())
+
+    # check we read twice
+    assert len(obs) == 2
+
+    # check we slept between reads
+    assert 0 < sleep.slept_for < 5
+
+
 def test_sensor_reader_read_one(mock_sensor, monkeypatch):
     sensor_reader = reader.SensorReader(
         port=mock_sensor.port,
@@ -200,7 +235,21 @@ def test_message_reader(tmp_path):
     with message_reader:
         values = list(message_reader())
 
+    # read all samples
     assert len(values) == 10
+
+
+def test_message_reader_limited_samples(tmp_path):
+    message_reader = reader.MessageReader(
+        path=captured_data,
+        samples=2,  # collect two samples
+        sensor=Sensor["PMS3003"],
+    )
+
+    with message_reader:
+        values = list(message_reader())
+
+    assert len(values) == 2
 
 
 def test_message_reader_read_one(tmp_path):
