@@ -34,6 +34,14 @@ class UnableToRead(Exception):
     pass
 
 
+class TemporaryFailure(Exception):
+    pass
+
+
+class ReaderNotReady(Exception):
+    pass
+
+
 class RawData(NamedTuple):
     """raw messages with timestamp"""
 
@@ -222,10 +230,10 @@ class SensorReader(Reader):
             while True:
                 try:
                     reading = self.read_one()
-                except SensorNotReady as e:  # pragma: no cover
+                except ReaderNotReady as e:  # pragma: no cover
                     logger.debug(e)
                     time.sleep(5)
-                except SensorWarning as e:  # pragma: no cover
+                except TemporaryFailure as e:  # pragma: no cover
                     logger.debug(e)
                 else:
                     yield sampler.sample(reading, raw=raw)
@@ -245,10 +253,10 @@ class SensorReader(Reader):
             return Reading(buffer=buffer, obs_data=obs)
         except SensorNotReady as e:  # pragma: no cover
             # no special handling needed
-            raise
+            raise ReaderNotReady
         except SensorWarning as e:  # pragma: no cover
             self.serial.reset_input_buffer()
-            raise
+            raise TemporaryFailure
 
 
 class MessageReader(Reader):
