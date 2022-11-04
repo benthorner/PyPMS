@@ -75,6 +75,49 @@ class Reader(AbstractContextManager):
         ...
 
 
+class Sampler:
+    # assert fields can be present
+    last_reading: Optional[Reading]
+    samples: Optional[int]
+
+    def __init__(
+        self,
+        *,
+        samples: Optional[int] = None,
+        interval: Optional[int] = None,
+    ):
+        if samples is not None and samples < 1:
+            # force at least one sample
+            self.samples = 1
+        else:
+            self.samples = samples
+
+        self.remaining_samples = self.samples
+        self.interval = interval
+        self.last_reading = None
+
+    def sample(
+        self,
+        reading: Reading,
+        *,
+        raw: Optional[bool],
+    ) -> Union[ObsData, RawData]:
+        if self.last_reading and self.interval:
+            delay = self.interval - (time.time() - self.last_reading.time)
+            if delay > 0:
+                time.sleep(delay)
+
+        self.last_reading = reading
+
+        if self.remaining_samples is not None:
+            if self.remaining_samples <= 0:
+                raise StopIteration
+
+            self.remaining_samples -= 1
+
+        return reading.raw_data if raw else reading.obs_data
+
+
 class SensorReader(Reader):
     """Read sensor messages from serial port
 
@@ -169,9 +212,13 @@ class SensorReader(Reader):
     def __call__(self, *, raw: Optional[bool] = None):
         """Passive mode reading at regular intervals"""
 
-        sample = 0
-        while self.serial.is_open:
-            try:
+        sampler = Sampler(
+            samples=self.samples,
+            interval=self.interval,
+        )
+
+        try:
+            while self.serial.is_open:
                 try:
                     reading = self.read_one()
                 except (SensorWarmingUp, InconsistentObservation) as e:  # pragma: no cover
@@ -180,17 +227,11 @@ class SensorReader(Reader):
                 except SensorWarning as e:  # pragma: no cover
                     logger.debug(e)
                 else:
-                    yield reading.raw_data if raw else reading.obs_data
-                    sample += 1
-                    if self.samples is not None and sample >= self.samples:
-                        break
-                    if self.interval:
-                        delay = self.interval - (time.time() - reading.time)
-                        if delay > 0:
-                            time.sleep(delay)
-            except KeyboardInterrupt:  # pragma: no cover
-                print()
-                break
+                    yield sampler.sample(reading, raw=raw)
+        except KeyboardInterrupt:  # pragma: no cover
+            print()
+        except StopIteration:
+            return
 
     def read_one(self) -> Reading:
         buffer = self._cmd("passive_read")
@@ -210,7 +251,7 @@ class MessageReader(Reader):
     def __init__(self, path: Path, sensor: Sensor, samples: Optional[int] = None) -> None:
         self.path = path
         self.sensor = sensor
-        self.samples = samples
+        self.sampler = Sampler(samples=samples)
 
     def __enter__(self) -> "MessageReader":
         logger.debug(f"open {self.path}")
@@ -226,11 +267,7 @@ class MessageReader(Reader):
     def __call__(self, *, raw: Optional[bool] = None):
         try:
             while reading := self.read_one():
-                yield reading.raw_data if raw else reading.obs_data
-                if self.samples:  # pragma: no cover
-                    self.samples -= 1
-                    if self.samples <= 0:
-                        break
+                yield self.sampler.sample(reading, raw=raw)
         except StopIteration:
             return
 
