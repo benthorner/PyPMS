@@ -173,7 +173,7 @@ class SensorReader(Reader):
                     sample += 1
                     if self.samples is not None and sample >= self.samples:
                         break
-                    if self.interval:  # pragma: no cover
+                    if self.interval:
                         delay = self.interval - (time.time() - obs.time)
                         if delay > 0:
                             time.sleep(delay)
@@ -203,7 +203,7 @@ class MessageReader(Reader):
         for row in self.data:
             time, message = int(row["time"]), bytes.fromhex(row["hex"])
             yield RawData(time, message) if raw else self.sensor.decode(message, time=time)
-            if self.samples:  # pragma: no cover
+            if self.samples:
                 self.samples -= 1
                 if self.samples <= 0:
                     break
