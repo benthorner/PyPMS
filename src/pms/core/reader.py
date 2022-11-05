@@ -84,39 +84,6 @@ class Reader(AbstractContextManager):
 
 
 class BaseReader(Reader):
-    def __init__(
-        self,
-        interval: Optional[int] = None,
-        samples: Optional[int] = None,
-    ):
-        self.samples = samples
-
-        self.sampler = Sampler(
-            samples=self.samples,
-            interval=interval,
-        )
-
-    def __call__(self, *, raw: Optional[bool] = None):
-        """Passive mode reading at regular intervals"""
-
-        try:
-            while True:
-                try:
-                    reading = self.read_one()
-                except ReaderNotReady as e:  # pragma: no cover
-                    logger.debug(e)
-                    time.sleep(5)
-                except TemporaryFailure as e:  # pragma: no cover
-                    logger.debug(e)
-                else:
-                    yield self.sampler.sample(reading, raw=raw)
-        except KeyboardInterrupt:  # pragma: no cover
-            print()
-        except StopIteration:
-            return
-
-
-class Sampler:
     # assert fields can be present
     last_reading: Optional[Reading]
     samples: Optional[int]
@@ -137,7 +104,26 @@ class Sampler:
         self.interval = interval
         self.last_reading = None
 
-    def sample(
+    def __call__(self, *, raw: Optional[bool] = None):
+        """Passive mode reading at regular intervals"""
+
+        try:
+            while True:
+                try:
+                    reading = self.read_one()
+                except ReaderNotReady as e:  # pragma: no cover
+                    logger.debug(e)
+                    time.sleep(5)
+                except TemporaryFailure as e:  # pragma: no cover
+                    logger.debug(e)
+                else:
+                    yield self._sampler(reading, raw=raw)
+        except KeyboardInterrupt:  # pragma: no cover
+            print()
+        except StopIteration:
+            return
+
+    def _sampler(
         self,
         reading: Reading,
         *,
