@@ -305,3 +305,13 @@ def test_message_reader(tmp_path):
         values = list(message_reader())
 
     assert len(values) == 10
+
+
+def test_message_reader_closed(tmp_path):
+    message_reader = reader.MessageReader(
+        path=captured_data,
+        sensor=Sensor["PMS3003"],
+    )
+
+    values = list(message_reader())
+    assert len(values) == 0
