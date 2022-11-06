@@ -180,6 +180,51 @@ def test_sensor_reader_preheat(mock_sensor, monkeypatch, mock_sleep):
     assert mock_sleep.slept_for == 5
 
 
+def test_sensor_reader_warm_up(mock_sensor, monkeypatch, mock_sleep):
+    sensor_reader = reader.SensorReader(
+        port=mock_sensor.port,
+        samples=0,
+        sensor="PMSx003",  # match with stubs
+        timeout=0.01,  # low to avoid hanging on failure
+    )
+
+    # https://github.com/pyserial/pyserial/issues/625
+    monkeypatch.setattr(
+        sensor_reader.serial,
+        "flush",
+        lambda: None,
+    )
+
+    def passive_read(n):
+        if n == 1:
+            # first return a "0" payload ("warming up")
+            return (
+                b"BM\x00\x1c"  # expected header
+                + b"\0" * 26  # payload (to total 32 bytes)
+                + b"\x00\xAB"  # checksum
+            )
+        else:
+            # then behave like the original stub again
+            return (
+                b"BM\x00\x1c"  # expected header
+                + b".........................."  # payload
+                + b"\x05W"  # checksum
+            )
+
+    mock_sensor.stub(
+        name="passive_read",
+        receive_bytes=b"BM\xe2\x00\x00\x01q",
+        send_fn=passive_read,
+    )
+
+    with sensor_reader as r:
+        obs = list(r())
+
+    # check we slept for warm up
+    assert mock_sleep.slept_for == 5
+    assert len(obs) == 1
+
+
 def test_sensor_reader_sensor_mismatch(mock_sensor, monkeypatch):
     sensor_reader = reader.SensorReader(
         port=mock_sensor.port,
